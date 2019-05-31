@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bgimage"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <!-- android:background="@drawable/borde_timer"  -->
+        <TextView
+            android:id="@+id/txtTimer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10sp"
+            android:gravity="center_horizontal"
+            android:textColor="@color/colorText"
+            android:text="00:00:00"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textSize="50sp"
+            android:textStyle="bold"
+            android:typeface="monospace" />
+
+        <View
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/black" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvTiempoFinal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorText"
+        android:text="00:00:00" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_margin="60sp" >
+
+        <ToggleButton
+            android:id="@+id/btnTimerControl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.14"
+            android:clickable="true"
+            android:onClick="onClick_btnTimerControl"
+            android:textOff="Off"
+            android:textOn="On" />
+
+        <EditText
+            android:id="@+id/timer_Minutos"
+            android:layout_width="48dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:inputType="number"
+            android:textColor="@color/colorText"
+            android:text="00" />
+
+        <TextView
+            android:id="@+id/timer_txtMinutos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorText"
+            android:text="min" />
+    </LinearLayout>
+
+</LinearLayout>
