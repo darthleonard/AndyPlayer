@@ -2,10 +2,8 @@ package darthleonard.andyplayer.control;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,16 +11,13 @@ import android.app.ProgressDialog;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnPreparedListener;
-import android.os.AsyncTask;
 import android.os.Environment;
-import android.util.Log;
-import android.widget.Toast;
 
 import darthleonard.andyplayer.MainActivity;
 import darthleonard.andyplayer.MusicaService;
+import darthleonard.andyplayer.filemanager.FileManager;
 
 public class Player {
-    public static final String extenciones[] = {".mp3"};
     public static List<Item> items;
     public static List<Item> listaRep;
     public static List<String> listasUsuario;
@@ -36,13 +31,15 @@ public class Player {
     private Timer timer;
     private boolean programado = false;
     private boolean aleatorio = false;
-    private File archivoTodo;
+    private FileManager fileManager;
+
 
     private ProgressDialog pd = null;
     private Object data = null;
 
     public Player(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
+        fileManager = new FileManager(mainActivity.getApplicationContext(), pd);
         try {
             cargaArchivos();
         } catch (ClassNotFoundException | IOException e1) {
@@ -179,7 +176,7 @@ public class Player {
             listaRep = items;
         else {
             File lista = new File("mnt/ext_card/AndyPlayer/Listas/"+nombre);
-            if(archivoTodo.exists()) {
+            if(fileManager.getSourcesFile().exists()) {
                 ObjectInputStream ois = new ObjectInputStream(new FileInputStream(lista));
                 listaRep = (List<Item>) ois.readObject();
                 ois.close();
@@ -227,56 +224,20 @@ public class Player {
             return false;
     }
 
-    private class BuscarArchivos extends AsyncTask {
-        ProgressDialog p;
-        public BuscarArchivos(ProgressDialog pd) {
-            p = pd;
-        }
-
-        @Override
-        protected Object doInBackground(Object[] params) {
-            try {
-                archivoTodo.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
-
-            items = new ArrayList<>();
-            recursivoCarga(items, f);
-            Tools.orderByTitulo(items);
-            listaRep = items;
-            ObjectOutputStream oos = null;
-            try {
-                oos = new ObjectOutputStream(new FileOutputStream(archivoTodo));
-                oos.writeObject(items);
-                oos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return new Object();
-        }
-
-        protected void onPostExecute(Object result) {
-            Toast.makeText(mainActivity,"Se encontraron " + items.size() + " archivos", Toast.LENGTH_LONG).show();
-            p.cancel();
-        }
-    }
-
     public void cargaArchivos() throws IOException, ClassNotFoundException {
         String estado = Environment.getExternalStorageState();
         String raiz = mainActivity.getExternalFilesDir(null).getAbsolutePath();
 
         if (estado.equals(Environment.MEDIA_MOUNTED)) {
-            archivoTodo = new File(Environment.getExternalStorageDirectory(), "ArchivosRegistrados.lst");
-            if(archivoTodo.exists()) {
-                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivoTodo));
+            fileManager.setSourcesFile(new File(Environment.getExternalStorageDirectory(), "ArchivosRegistrados.lst"));
+            if(fileManager.getSourcesFile().exists()) {
+                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileManager.getSourcesFile()));
                 items = (List<Item>) ois.readObject();
                 listaRep = items;
                 ois.close();
             }else {
                 this.pd = ProgressDialog.show(mainActivity, "Espere unos segundos...", "Buscando archivos de musica", true, false);
-                new BuscarArchivos(this.pd).execute("");
+                fileManager.execute("");
             }
         } else if (estado.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
             Tools.mostrarMensaje(mainActivity.getApplicationContext(),"Error en la tarjeta SD","La tarjeta se encuentra en estado de solo lectura","Aceptar",Tools.MENSAJE_ALERTA);
@@ -315,42 +276,9 @@ public class Player {
         lista.delete();
     }
 
-    private void recursivoCarga(List<Item> item, File f) {
-        if(f.isDirectory()){
-            File[] file = f.listFiles();
-            String path, name[];
-            for (int i = 0; i < file.length; i++) {
-                if(file[i].isDirectory())
-                    recursivoCarga(item, file[i]);
-                else{
-                    path = file[i].getAbsolutePath();
-                    name = path.split("/");
-                    name = name[name.length-1].split(" - ");
-                    if(!esSoportado(name[name.length-1]))
-                        continue;
 
-                    Item k;
-                    if(name.length > 1)
-                        k = new Item(name[name.length-1], name[0], path);
-                    else
-                        k = new Item(name[name.length-1], path);
 
-                    item.add(k);
-                    //nombre.add(name[name.length-1]);
-                }
-            }
-        }
-    }
 
-    private boolean esSoportado(String name) {
-        for (int i = 0; i < extenciones.length; i++) {
-            if(name.endsWith(extenciones[i])) {
-                name = name.substring(0, extenciones[i].length());
-                return true;
-            }
-        }
-        return false;
-    }
 
     public void Terminar() {
         mp.release();
