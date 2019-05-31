@@ -20,33 +20,31 @@ import darthleonard.andyplayer.control.Tools;
 import static darthleonard.andyplayer.control.Player.items;
 
 public class FileManager extends AsyncTask {
-    public static final String extenciones[] = {".mp3"};
+    public static final String FILE_EXTENSIONS[] = { ".mp3" };
     private Context context;
-    private ProgressDialog p;
-    private Player player;
-    private File archivoTodo;
+    private ProgressDialog progressDialog;
+    private File sourcesFile;
 
-    public FileManager(Context context, ProgressDialog pd) {
+    public FileManager(Context context, ProgressDialog progressDialog) {
         this.context = context;
-        p = pd;
+        this.progressDialog = progressDialog;
     }
 
     @Override
     protected Object doInBackground(Object[] params) {
         try {
-            archivoTodo.createNewFile();
+            sourcesFile.createNewFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
-
+        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
         items = new ArrayList<>();
-        recursivoCarga(items, f);
+        recursiveLoad(items, file);
         Tools.orderByTitulo(items);
         Player.listaRep = items;
-        ObjectOutputStream oos = null;
+        ObjectOutputStream oos;
         try {
-            oos = new ObjectOutputStream(new FileOutputStream(archivoTodo)); // sometimes fails when file exist
+            oos = new ObjectOutputStream(new FileOutputStream(sourcesFile)); // sometimes fails when file exist
             oos.writeObject(items);
             oos.close();
         } catch (IOException e) {
@@ -56,52 +54,53 @@ public class FileManager extends AsyncTask {
     }
 
     protected void onPostExecute(Object result) {
-        Toast.makeText(context,"Se encontraron " + items.size() + " archivos", Toast.LENGTH_LONG).show();
-        p.cancel();
+        Toast.makeText(context, "Se encontraron " + items.size() + " archivos", Toast.LENGTH_LONG).show();
+        progressDialog.cancel();
     }
 
-    private void recursivoCarga(List<Item> item, File f) {
-        if(f.isDirectory()){
-            File[] file = f.listFiles();
-            String path, name[];
-            for (int i = 0; i < file.length; i++) {
-                if(file[i].isDirectory())
-                    recursivoCarga(item, file[i]);
-                else{
-                    path = file[i].getAbsolutePath();
-                    name = path.split("/");
-                    name = name[name.length-1].split(" - ");
-                    if(!esSoportado(name[name.length-1]))
-                        continue;
+    public File getSourcesFile() {
+        return sourcesFile;
+    }
 
-                    Item k;
-                    if(name.length > 1)
-                        k = new Item(name[name.length-1], name[0], path);
-                    else
-                        k = new Item(name[name.length-1], path);
+    public void setSourcesFile(File file) {
+        sourcesFile = file;
+    }
 
-                    item.add(k);
-                    //nombre.add(name[name.length-1]);
-                }
+    private void recursiveLoad(List<Item> items, File f) {
+        if (!f.isDirectory()) {
+            return;
+        }
+        File[] file = f.listFiles();
+        String path, name[];
+        for (int i = 0; i < file.length; i++) {
+            if (file[i].isDirectory())
+                recursiveLoad(items, file[i]);
+            else {
+                path = file[i].getAbsolutePath();
+                name = path.split("/");
+                name = name[name.length - 1].split(" - ");
+                if (!isSupported(name[name.length - 1]))
+                    continue;
+
+                Item item;
+                if (name.length > 1)
+                    item = new Item(name[name.length - 1], name[0], path);
+                else
+                    item = new Item(name[name.length - 1], path);
+
+                items.add(item);
+                //nombre.add(name[name.length-1]);
             }
         }
     }
 
-    private boolean esSoportado(String name) {
-        for (int i = 0; i < extenciones.length; i++) {
-            if(name.endsWith(extenciones[i])) {
-                name = name.substring(0, extenciones[i].length());
+    private boolean isSupported(String name) {
+        for (int i = 0; i < FILE_EXTENSIONS.length; i++) {
+            if (name.endsWith(FILE_EXTENSIONS[i])) {
+                name = name.substring(0, FILE_EXTENSIONS[i].length());
                 return true;
             }
         }
         return false;
-    }
-
-    public File getSourcesFile() {
-        return archivoTodo;
-    }
-
-    public void setSourcesFile(File file) {
-        archivoTodo = file;
     }
 }
